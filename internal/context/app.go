@@ -2,6 +2,7 @@ package context
 
 import (
 	"github.com/shashank-sharma/metadata/internal/config"
+	"github.com/shashank-sharma/metadata/internal/cron"
 	"github.com/shashank-sharma/metadata/internal/models"
 	"github.com/shashank-sharma/metadata/internal/services/activitywatch"
 	"github.com/shashank-sharma/metadata/internal/services/backend"
@@ -14,6 +15,7 @@ type AppContext struct {
 	Config         config.AppConfig
 	State          models.BaseState
 	Notification   *theme.Notification
+	CronService    *cron.CronService
 }
 
 func NewAppContext(config config.AppConfig) *AppContext {
@@ -26,5 +28,6 @@ func NewAppContext(config config.AppConfig) *AppContext {
 		State:          *models.NewGlobalState(),
 		Notification:   theme.NewNotification(),
 		Config:         config,
+		CronService:    cron.NewCronService(),
 	}
 }

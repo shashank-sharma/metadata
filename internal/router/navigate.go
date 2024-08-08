@@ -12,6 +12,9 @@ func (r *Router) Navigate(route Route) {
 	defer r.mu.Unlock()
 
 	logger.Debug.Println("Route: ", route)
+	if r.AppCtx.Config.Settings.UserSettings.Token == "" && route != "login" {
+		return
+	}
 
 	meta, ok := r.metadata[route]
 	if !ok {

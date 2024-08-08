@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 
@@ -30,6 +31,9 @@ func (lc *LoginController) Screen(meta router.RouteMetadata) fyne.CanvasObject {
 
 	passwordEntry := widget.NewPasswordEntry()
 	passwordEntry.SetPlaceHolder("Password")
+
+	backendEndpoint := widget.NewLabel(fmt.Sprintf("Backend: %s", lc.router.AppCtx.Config.BackendEndpoint))
+	awEndpoint := widget.NewLabel(fmt.Sprintf("AWEndpoint: %s", lc.router.AppCtx.Config.AWEndpoint))
 
 	lc.router.AppCtx.Notification.Show("Login required for dev token", "info")
 
@@ -84,6 +88,8 @@ func (lc *LoginController) Screen(meta router.RouteMetadata) fyne.CanvasObject {
 	content := container.NewVBox(
 		title,
 		formContainer,
+		backendEndpoint,
+		awEndpoint,
 	)
 
 	return container.NewVBox(

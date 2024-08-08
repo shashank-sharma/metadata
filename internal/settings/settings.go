@@ -9,9 +9,10 @@ type BaseSettings interface {
 }
 
 type UserSettings struct {
-	UserId    string `json:"userid"`
-	Token     string `json:"token"`
-	ProductId string `json:"productid"`
+	UserId    string          `json:"userid"`
+	Token     string          `json:"token"`
+	ProductId string          `json:"productid"`
+	Bucket    map[string]bool `json:"bucket"`
 }
 
 func (us *UserSettings) FileName() string {

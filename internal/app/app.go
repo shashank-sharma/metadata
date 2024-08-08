@@ -7,7 +7,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
-	"github.com/distatus/battery"
 	"github.com/shashank-sharma/metadata/internal/config"
 	"github.com/shashank-sharma/metadata/internal/context"
 	"github.com/shashank-sharma/metadata/internal/controllers"
@@ -30,7 +29,7 @@ func New() (*Application, error) {
 	appConfig, err := config.LoadConfig(application.RootApp.Storage().RootURI())
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to load settings")
+		return nil, fmt.Errorf("Failed to load settings: %s", err)
 	}
 	application.Config = appConfig
 
@@ -43,38 +42,30 @@ func New() (*Application, error) {
 	return application, nil
 }
 
-func logLifecycle(a fyne.App) {
-	a.Lifecycle().SetOnStarted(func() {
+func (app *Application) logLifecycle() {
+	app.RootApp.Lifecycle().SetOnStarted(func() {
 		logger.Debug.Println("Lifecycle: Started")
 	})
-	a.Lifecycle().SetOnStopped(func() {
+	app.RootApp.Lifecycle().SetOnStopped(func() {
 		logger.Debug.Println("Lifecycle: Stopped")
+		app.Context.CronService.StopAllJobs()
 	})
-	a.Lifecycle().SetOnEnteredForeground(func() {
+	app.RootApp.Lifecycle().SetOnEnteredForeground(func() {
 		logger.Debug.Println("Lifecycle: Entered Foreground")
 	})
-	a.Lifecycle().SetOnExitedForeground(func() {
+	app.RootApp.Lifecycle().SetOnExitedForeground(func() {
 		logger.Debug.Println("Lifecycle: Exited Foreground")
 	})
 }
 
 func (app *Application) InitCronJobs() {
-	ticker := time.NewTicker(10 * time.Second)
-	quit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				if false {
-					logger.Debug.Println("Running cron ping")
-					// component.PingOnlineStatus(s)
-				}
-			case <-quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
+	app.Context.CronService.AddJob("job-1", "", 1*time.Minute, func() {
+		logger.Info.Println("I am running this random cron")
+	})
+
+	app.Context.CronService.AddJob("job-2", "", 1*time.Minute, func() {
+		logger.Info.Println("I am running")
+	})
 }
 
 func (app *Application) RegisterRoute() {
@@ -89,19 +80,22 @@ func (app *Application) RegisterRoute() {
 	}, controllers.NewAboutController(app.Router))
 
 	app.Router.RegisterRoute(router.LoginRoute, router.RouteMetadata{
-		Title:   "Login",
+		Title:   "Login me",
 		Content: "Created by login",
 	}, controllers.NewLoginController(app.Router))
+
+	app.Router.RegisterRoute(router.CronRoute, router.RouteMetadata{
+		Title:   "CRON Jobs",
+		Content: "Created by login",
+	}, controllers.NewCronController(app.Router))
 }
 
-func (app *Application) Start() error {
-	// ui.MakeTray(app.RootApp)
-	logLifecycle(app.RootApp)
-	// app.RootWindow.SetMaster()
-	app.RegisterRoute()
+func (app *Application) Render() {
+	toolbar := controllers.NewToolbar(app.Router)
 
-	content := container.NewBorder(app.Context.Notification.Container(), nil, nil, nil, app.Router.GetNavStack())
-	app.RootWindow.SetContent(content)
+	content := container.NewBorder(toolbar, nil, nil, nil, app.Router.GetNavStack())
+	fullContent := container.NewBorder(app.Context.Notification.Container(), nil, nil, nil, content)
+	app.RootWindow.SetContent(fullContent)
 
 	if app.Config.Settings.UserSettings.Token == "" {
 		app.Router.Navigate(router.LoginRoute)
@@ -109,24 +103,35 @@ func (app *Application) Start() error {
 		app.Router.Navigate(router.HomeRoute)
 	}
 	app.RootWindow.Resize(fyne.NewSize(520, 520))
-
-	batteries, err := battery.GetAll()
-	if err != nil {
-		fmt.Println("Could not get battery info!")
-		return nil
-	}
-	for i, battery := range batteries {
-		fmt.Printf("Bat%d: ", i)
-		fmt.Printf("state: %s, ", battery.State.String())
-		fmt.Printf("current capacity: %f mWh, ", battery.Current)
-		fmt.Printf("last full capacity: %f mWh, ", battery.Full)
-		fmt.Printf("design capacity: %f mWh, ", battery.Design)
-		fmt.Printf("charge rate: %f mW, ", battery.ChargeRate)
-		fmt.Printf("voltage: %f V, ", battery.Voltage)
-		fmt.Printf("design voltage: %f V\n", battery.DesignVoltage)
-	}
-
 	app.RootWindow.ShowAndRun()
+}
+
+func (app *Application) InitializeAWState() {
+	if app.Context.AWService.AWInfo.Hostname != "" {
+		userSettings := app.Config.Settings.UserSettings
+		buckets, err := app.Context.AWService.FetchBuckets()
+		if err != nil {
+			return
+		}
+		if userSettings.Bucket == nil {
+			userSettings.Bucket = map[string]bool{}
+		}
+		for _, bucket := range buckets {
+			_, ok := userSettings.Bucket[bucket.ID]
+			if !ok {
+				userSettings.Bucket[bucket.ID] = false
+			}
+		}
+
+		app.Config.SettingsManager.SaveSettings(userSettings)
+	}
+}
+
+func (app *Application) Start() error {
+	app.logLifecycle()
+	app.RegisterRoute()
+	app.InitializeAWState()
+	app.Render()
 
 	return nil
 }

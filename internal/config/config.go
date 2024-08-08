@@ -1,34 +1,60 @@
 package config
 
 import (
-	"os"
+	"embed"
+	"encoding/json"
+	"errors"
+	"io/fs"
 
 	"fyne.io/fyne/v2"
+	"github.com/shashank-sharma/metadata/internal/logger"
 	"github.com/shashank-sharma/metadata/internal/settings"
 )
+
+//go:embed config.json
+var embeddedFiles embed.FS
 
 // AppConfig holds the application configuration.
 type AppConfig struct {
 	BackendEndpoint string
 	AWEndpoint      string
-	Settings        settings.Settings
+	Settings        *settings.Settings
 	SettingsManager *settings.SettingsManager
 	Debug           bool
 	Prod            bool
 }
 
 func LoadConfig(uri fyne.URI) (AppConfig, error) {
+	config := AppConfig{
+		BackendEndpoint: "http://localhost:8090/",
+		AWEndpoint:      "http://localhost:5600/",
+		Debug:           true,
+		Prod:            false,
+	}
 	settingsManager := &settings.SettingsManager{StorageRoot: uri}
 	appSettings, err := initSettings(settingsManager)
 	if err != nil {
 		return AppConfig{}, err
 	}
-	return AppConfig{
-		BackendEndpoint: getEnv("BACKEND_ENDPOINT", ""),
-		AWEndpoint:      getEnv("AW_ENDPOINT", ""),
-		Settings:        appSettings,
-		SettingsManager: settingsManager,
-	}, nil
+
+	fileData, err := embeddedFiles.ReadFile("config.json")
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			logger.Warning.Println("config.json not found, using default configuration")
+		} else {
+			logger.Error.Println("error reading config.json:", err)
+			return AppConfig{}, err
+		}
+	} else {
+		if err := json.Unmarshal(fileData, &config); err != nil {
+			logger.Error.Println("error parsing config.json:", err)
+			return AppConfig{}, err
+		}
+	}
+
+	config.Settings = &appSettings
+	config.SettingsManager = settingsManager
+	return config, nil
 }
 
 func initSettings(settingsManager *settings.SettingsManager) (settings.Settings, error) {
@@ -48,21 +74,4 @@ func initSettings(settingsManager *settings.SettingsManager) (settings.Settings,
 		ApplicationSettings: appSettings,
 		UserSettings:        userSettings,
 	}, nil
-}
-
-/*
-func Get() *AppConfig {
-	if globalConfig == nil {
-		log.Fatal("Config has not been loaded")
-	}
-	return globalConfig
-}
-*/
-
-func getEnv(key, defaultValue string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists {
-		value = defaultValue
-	}
-	return value
 }

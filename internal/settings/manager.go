@@ -18,6 +18,7 @@ type SettingsManager struct {
 
 func (manager *SettingsManager) LoadSettings(s BaseSettings) error {
 	fileURI, _ := storage.Child(manager.StorageRoot, s.FileName())
+	logger.Debug.Printf("Reading file: %s", fileURI)
 	r, err := storage.Reader(fileURI)
 	if err != nil {
 		return err
@@ -63,6 +64,14 @@ func (manager *SettingsManager) SettingsExists(s BaseSettings) (bool, error) {
 	if f == false || err != nil {
 		return false, err
 	}
+
+	r, err := storage.Reader(fileURI)
+	if err != nil {
+		logger.Debug.Println("Can't open existing file")
+		return false, nil
+	}
+	defer r.Close()
+	logger.Debug.Printf("SettingsExists: %s %t", fileURI, f)
 	return f, nil
 }
 
@@ -91,6 +100,8 @@ func (manager *SettingsManager) InitializeSettings(s BaseSettings) error {
 			return err
 		}
 	} else {
+		z, _ := storage.List(manager.StorageRoot)
+		logger.Debug.Println("Settings list: ", z)
 		logger.Debug.Println("Settings found: ", manager.StorageRoot)
 		err = manager.LoadSettings(s)
 		if err != nil {

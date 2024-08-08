@@ -1,0 +1,6 @@
+{
+    "BackendEndpoint": "http://localhost:8090/",
+	"AWEndpoint": "http://localhost:5600/",
+	"Debug": true,
+	"Prod": false
+}

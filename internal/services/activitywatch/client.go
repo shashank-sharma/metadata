@@ -8,11 +8,14 @@ import (
 
 type AWService struct {
 	Client *apiclient.APIClient
+	AWInfo AWInfo
 }
 
 func NewAWService(baseUrl string) *AWService {
 	apiClient := apiclient.New(baseUrl, 60*time.Second)
-	return &AWService{
+	awService := &AWService{
 		Client: apiClient,
 	}
+	awService.AWInfo = awService.FetchInfo()
+	return awService
 }

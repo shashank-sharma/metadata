@@ -1,0 +1,8 @@
+Website = "https://shashank-sharma.xyz/"
+
+[Details]
+  Icon = "icon.png"
+  Name = "Metadata"
+  ID = "io.github.shashank-sharma.xyz"
+  Version = "0.0.1"
+  Build = 2

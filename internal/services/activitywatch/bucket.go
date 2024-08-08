@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
-
-	"github.com/shashank-sharma/metadata/internal/logger"
 )
 
 type ActivityWatchBucket struct {
@@ -19,7 +17,7 @@ type ActivityWatchBucket struct {
 	LastUpdated time.Time       `json:"last_updated"`
 }
 
-func (as *AWService) FetchBuckets() ([]ActivityWatchBucket, error) {
+func (as *AWService) FetchBuckets() (map[string]ActivityWatchBucket, error) {
 	req, _ := as.Client.NewRequest("GET", "/api/0/buckets", nil, map[string]string{})
 	resp, err := as.Client.Do(req)
 
@@ -27,15 +25,14 @@ func (as *AWService) FetchBuckets() ([]ActivityWatchBucket, error) {
 		return nil, err
 	}
 
-	logger.Debug.Printf("User response status: %+v", resp.StatusCode)
-
 	if resp.StatusCode/100 != 2 {
 		return nil, errors.New(resp.Status)
 	}
 
-	data := []ActivityWatchBucket{}
-	json.NewDecoder(resp.Body).Decode(&data)
+	var bucketMap map[string]ActivityWatchBucket
+	if err := json.NewDecoder(resp.Body).Decode(&bucketMap); err != nil {
+		return nil, err
+	}
 
-	logger.Debug.Printf("Fetch user response: %+v", data)
-	return data, nil
+	return bucketMap, nil
 }
