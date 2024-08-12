@@ -34,10 +34,7 @@ func (manager *SettingsManager) LoadSettings(s BaseSettings) error {
 }
 
 func (manager *SettingsManager) SaveSettings(s BaseSettings) error {
-	logger.Debug.Println("Meta for filename: ", s.FileName())
-	logger.Debug.Println("Meta for storageRoot: ", manager.StorageRoot)
 	fileURI, _ := storage.Child(manager.StorageRoot, s.FileName())
-	logger.Debug.Println("Saved settings at: ", fileURI)
 	w, err := storage.Writer(fileURI)
 	if err != nil {
 		return err
@@ -67,11 +64,10 @@ func (manager *SettingsManager) SettingsExists(s BaseSettings) (bool, error) {
 
 	r, err := storage.Reader(fileURI)
 	if err != nil {
-		logger.Debug.Println("Can't open existing file")
+		logger.Warning.Println("Can't open existing file")
 		return false, nil
 	}
 	defer r.Close()
-	logger.Debug.Printf("SettingsExists: %s %t", fileURI, f)
 	return f, nil
 }
 
@@ -100,9 +96,6 @@ func (manager *SettingsManager) InitializeSettings(s BaseSettings) error {
 			return err
 		}
 	} else {
-		z, _ := storage.List(manager.StorageRoot)
-		logger.Debug.Println("Settings list: ", z)
-		logger.Debug.Println("Settings found: ", manager.StorageRoot)
 		err = manager.LoadSettings(s)
 		if err != nil {
 			return err

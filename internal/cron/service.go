@@ -23,6 +23,11 @@ func (j *CronJob) Schedule() {
 	ticker := time.NewTicker(j.Interval)
 
 	go func() {
+		j.mutex.Lock()
+		j.Run()
+		nextRun := time.Now().Add(j.Interval).Format(time.RFC1123)
+		j.NextRun.Set(nextRun)
+		j.mutex.Unlock()
 		for {
 			select {
 			case <-ticker.C:
@@ -50,11 +55,13 @@ type CronService struct {
 func (cs *CronService) StopAllJobs() {
 	logger.Info.Println("Stopping all CRON Jobs")
 	for _, job := range cs.cronJobs {
+		logger.Info.Println("Stopping CRON: ", job.Id)
 		job.Stop()
 	}
 }
 
 func (cs *CronService) AddJob(id, description string, interval time.Duration, run func()) *CronJob {
+	logger.Debug.Println("Starting job: ", id)
 	nextRunBinding := binding.NewString()
 	job := &CronJob{
 		Id:          id,

@@ -16,6 +16,7 @@ type APIClient struct {
 	HTTPClient *http.Client
 	BaseURL    string
 	token      string
+	devToken   string
 }
 
 func New(baseUrl string, timeout time.Duration) *APIClient {
@@ -32,6 +33,37 @@ func New(baseUrl string, timeout time.Duration) *APIClient {
 
 func (c *APIClient) SetToken(token string) {
 	c.token = token
+}
+
+func (c *APIClient) SetDevToken(token string) {
+	c.devToken = token
+}
+
+func (c *APIClient) NewRequestWithParams(method, route string, params map[string]string, headers map[string]string) (*http.Request, error) {
+	reqUrl, err := c.url(route)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(method, reqUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+
+	if len(params) > 0 {
+		query := req.URL.Query()
+		for key, value := range params {
+			query.Add(key, value)
+		}
+		req.URL.RawQuery = query.Encode()
+	}
+
+	c.logRequest(req)
+	return req, nil
 }
 
 func (c *APIClient) NewRequest(method, route string, body io.Reader, headers map[string]string) (*http.Request, error) {
@@ -60,6 +92,10 @@ func (c *APIClient) Do(req *http.Request) (*http.Response, error) {
 		req.Header.Set("Authorization", c.token)
 	}
 
+	if c.devToken != "" {
+		req.Header.Set("AuthSyncToken", c.devToken)
+	}
+
 	if req.Method == "POST" {
 		req.Header.Add("Content-Type", "application/json")
 	}
@@ -85,10 +121,18 @@ func (c *APIClient) url(route string) (string, error) {
 
 func (c *APIClient) logRequest(req *http.Request) {
 	dump, err := httputil.DumpRequestOut(req, true)
+	dumpString := string(dump)
 	if err != nil {
 		logger.Debug.Println("Error dumping request:", err)
 	}
-	logger.Debug.Println("API request:", string(dump))
+
+	if len(dumpString) > 200 {
+		dumpString = dumpString[:200] + "..."
+	}
+
+	if false {
+		logger.Debug.Println("API request:", dumpString)
+	}
 }
 
 func (c *APIClient) logResponse(resp *http.Response) {
@@ -106,8 +150,17 @@ func (c *APIClient) logResponse(resp *http.Response) {
 		logger.Debug.Println("Error dumping response:", err)
 		return
 	}
-	logger.Debug.Printf("API response: %s\n", string(dump))
-	logger.Debug.Printf("Response body: %s\n", string(bodyBytes))
+
+	stringBody := string(bodyBytes)
+	if len(stringBody) > 200 {
+		stringBody = stringBody[:200] + "..."
+	}
+
+	if false {
+		logger.Debug.Printf("API response: %s\n", string(dump))
+		logger.Debug.Printf("Response body: %s\n", stringBody)
+	}
+
 	resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 }
 

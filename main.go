@@ -12,6 +12,5 @@ func main() {
 		fmt.Println("Failed to start Application: ", err)
 		return
 	}
-	application.InitCronJobs()
 	application.Start()
 }

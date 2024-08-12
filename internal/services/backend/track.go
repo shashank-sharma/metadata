@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+
+	types "github.com/shashank-sharma/metadata/internal/types"
 )
 
 type Error struct {
@@ -24,8 +26,40 @@ type TrackDevicePayload struct {
 	Arch     string `json:"arch,omitempty"`
 }
 
+type EventListPayload struct {
+	DeviceId string          `json:"device_id"`
+	TaskName string          `json:"task_name"`
+	Events   []types.AWEvent `json:"events"`
+}
+
 type TrackingDeviceResponse struct {
 	ProductId string `json:"id"`
+}
+
+type EventSyncResponse struct {
+	CreateCount int64 `json:"create_count"`
+	FailedCount int64 `json:"failed_count"`
+	SkipCount   int64 `json:"skip_count"`
+	ForceCheck  bool  `json:"force_check"`
+}
+
+func (bs *BackendService) SyncEventData(deviceId string, taskName string, events []types.AWEvent) (EventSyncResponse, error) {
+	eventPayloadBuf := new(bytes.Buffer)
+	json.NewEncoder(eventPayloadBuf).Encode(&EventListPayload{DeviceId: deviceId, TaskName: taskName, Events: events})
+	req, _ := bs.Client.NewRequest("POST", "/api/sync/create", eventPayloadBuf, map[string]string{})
+	resp, err := bs.Client.Do(req)
+
+	if err != nil {
+		return EventSyncResponse{}, err
+	}
+
+	if resp.StatusCode != 200 {
+		return EventSyncResponse{}, errors.New(resp.Status)
+	}
+
+	data := EventSyncResponse{}
+	json.NewDecoder(resp.Body).Decode(&data)
+	return data, nil
 }
 
 func (bs *BackendService) PingOnlineStatus(userId, token, productId string) (bool, error) {

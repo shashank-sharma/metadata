@@ -23,12 +23,14 @@ func (hc *HomeController) GenerateBucketList() fyne.CanvasObject {
 	userSettings := hc.router.AppCtx.Config.Settings.UserSettings
 	settingsManager := hc.router.AppCtx.Config.SettingsManager
 	bucketMap := userSettings.Bucket
-	for bucketName, isEnabled := range bucketMap {
+	for bucketName, bucketConfig := range bucketMap {
 		bucketName := bucketName
 		checkbox := widget.NewCheck(bucketName, func(checked bool) {
-			bucketMap[bucketName] = checked
+			tempBucket := bucketMap[bucketName]
+			tempBucket.IsEnabled = checked
+			bucketMap[bucketName] = tempBucket
 		})
-		checkbox.SetChecked(isEnabled)
+		checkbox.SetChecked(bucketConfig.IsEnabled)
 
 		items = append(items, widget.NewFormItem("", checkbox))
 	}
@@ -40,6 +42,7 @@ func (hc *HomeController) GenerateBucketList() fyne.CanvasObject {
 			hc.router.AppCtx.Notification.Show("Failed saving", "error")
 		}
 		hc.router.AppCtx.Notification.Show("Settings saved", "info")
+		hc.router.AppCtx.StartCronJob()
 
 	})
 

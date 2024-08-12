@@ -1,6 +1,8 @@
 package settings
 
 import (
+	"time"
+
 	"fyne.io/fyne/v2"
 )
 
@@ -8,11 +10,18 @@ type BaseSettings interface {
 	FileName() string
 }
 
+type BucketConfig struct {
+	IsEnabled      bool
+	StartTimestamp time.Time
+	EndTimestamp   time.Time
+	LastSynced     time.Time
+}
+
 type UserSettings struct {
-	UserId    string          `json:"userid"`
-	Token     string          `json:"token"`
-	ProductId string          `json:"productid"`
-	Bucket    map[string]bool `json:"bucket"`
+	UserId    string                  `json:"userid"`
+	Token     string                  `json:"token"`
+	ProductId string                  `json:"productid"`
+	Bucket    map[string]BucketConfig `json:"bucket"`
 }
 
 func (us *UserSettings) FileName() string {

@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -50,22 +49,14 @@ func (app *Application) logLifecycle() {
 		logger.Debug.Println("Lifecycle: Stopped")
 		app.Context.CronService.StopAllJobs()
 	})
-	app.RootApp.Lifecycle().SetOnEnteredForeground(func() {
-		logger.Debug.Println("Lifecycle: Entered Foreground")
-	})
-	app.RootApp.Lifecycle().SetOnExitedForeground(func() {
-		logger.Debug.Println("Lifecycle: Exited Foreground")
-	})
-}
-
-func (app *Application) InitCronJobs() {
-	app.Context.CronService.AddJob("job-1", "", 1*time.Minute, func() {
-		logger.Info.Println("I am running this random cron")
-	})
-
-	app.Context.CronService.AddJob("job-2", "", 1*time.Minute, func() {
-		logger.Info.Println("I am running")
-	})
+	/*
+		app.RootApp.Lifecycle().SetOnEnteredForeground(func() {
+			logger.Debug.Println("Lifecycle: Entered Foreground")
+		})
+		app.RootApp.Lifecycle().SetOnExitedForeground(func() {
+			logger.Debug.Println("Lifecycle: Exited Foreground")
+		})
+	*/
 }
 
 func (app *Application) RegisterRoute() {
@@ -100,37 +91,16 @@ func (app *Application) Render() {
 	if app.Config.Settings.UserSettings.Token == "" {
 		app.Router.Navigate(router.LoginRoute)
 	} else {
+		app.Context.OnLoginSuccess()
 		app.Router.Navigate(router.HomeRoute)
 	}
 	app.RootWindow.Resize(fyne.NewSize(520, 520))
 	app.RootWindow.ShowAndRun()
 }
 
-func (app *Application) InitializeAWState() {
-	if app.Context.AWService.AWInfo.Hostname != "" {
-		userSettings := app.Config.Settings.UserSettings
-		buckets, err := app.Context.AWService.FetchBuckets()
-		if err != nil {
-			return
-		}
-		if userSettings.Bucket == nil {
-			userSettings.Bucket = map[string]bool{}
-		}
-		for _, bucket := range buckets {
-			_, ok := userSettings.Bucket[bucket.ID]
-			if !ok {
-				userSettings.Bucket[bucket.ID] = false
-			}
-		}
-
-		app.Config.SettingsManager.SaveSettings(userSettings)
-	}
-}
-
 func (app *Application) Start() error {
 	app.logLifecycle()
 	app.RegisterRoute()
-	app.InitializeAWState()
 	app.Render()
 
 	return nil

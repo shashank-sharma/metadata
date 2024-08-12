@@ -78,6 +78,7 @@ func (lc *LoginController) Screen(meta router.RouteMetadata) fyne.CanvasObject {
 			userSettings.Token = devToken
 
 			lc.router.AppCtx.Config.SettingsManager.SaveSettings(userSettings)
+			lc.router.AppCtx.OnLoginSuccess()
 
 			lc.router.AppCtx.Notification.Show("Welcome", "info")
 			lc.router.Navigate(router.HomeRoute)
