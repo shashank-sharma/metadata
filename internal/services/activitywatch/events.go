@@ -26,7 +26,7 @@ func (as *AWService) FetchEventById(bucket string, id int) (types.AWEvent, error
 }
 
 func (as *AWService) FetchEvents(bucket string, start time.Time, end time.Time) (types.AWEvents, error) {
-	layout := "2006-01-02T15:04:05.999999"
+	layout := time.RFC3339Nano
 	params := map[string]string{
 		"start": start.Format(layout),
 		"end":   end.Format(layout),

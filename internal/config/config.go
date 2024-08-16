@@ -40,14 +40,14 @@ func LoadConfig(uri fyne.URI) (AppConfig, error) {
 	fileData, err := embeddedFiles.ReadFile("config.json")
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			logger.Warning.Println("config.json not found, using default configuration")
+			logger.LogWarning("config.json not found, using default configuration")
 		} else {
-			logger.Error.Println("error reading config.json:", err)
+			logger.LogError("error reading config.json:", err)
 			return AppConfig{}, err
 		}
 	} else {
 		if err := json.Unmarshal(fileData, &config); err != nil {
-			logger.Error.Println("error parsing config.json:", err)
+			logger.LogError("error parsing config.json:", err)
 			return AppConfig{}, err
 		}
 	}

@@ -38,7 +38,7 @@ func (hc *HomeController) GenerateBucketList() fyne.CanvasObject {
 	saveButton := widget.NewButton("Save", func() {
 		userSettings.Bucket = bucketMap
 		if err := settingsManager.SaveSettings(userSettings); err != nil {
-			logger.Error.Println("Failed saving bucketList: ", err)
+			logger.LogError("Failed saving bucketList: ", err)
 			hc.router.AppCtx.Notification.Show("Failed saving", "error")
 		}
 		hc.router.AppCtx.Notification.Show("Settings saved", "info")

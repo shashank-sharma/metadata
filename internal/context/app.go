@@ -38,7 +38,7 @@ func NewAppContext(config config.AppConfig) *AppContext {
 }
 
 func (ac *AppContext) OnLoginSuccess() {
-	logger.Debug.Println("Login Success")
+	logger.LogDebug("Login Success")
 
 	ac.InitializeAWState()
 	if ac.Config.Settings.UserSettings.UserId != "" && ac.Config.Settings.UserSettings.Token != "" {
@@ -60,10 +60,12 @@ func (ac *AppContext) StartCronJob() {
 }
 
 func (ac *AppContext) InitializeAWState() {
+	logger.LogDebug("Initializing AWState for: ", ac.AWService.AWInfo.Hostname)
 	if ac.AWService.AWInfo.Hostname != "" {
 		userSettings := ac.Config.Settings.UserSettings
 		buckets, err := ac.AWService.FetchBuckets()
 		if err != nil {
+			logger.LogError("Error fetching: ", err)
 			return
 		}
 		if userSettings.Bucket == nil {
@@ -78,6 +80,9 @@ func (ac *AppContext) InitializeAWState() {
 			}
 		}
 
-		ac.Config.SettingsManager.SaveSettings(userSettings)
+		err = ac.Config.SettingsManager.SaveSettings(userSettings)
+		if err != nil {
+			logger.LogError("Failed saving state: ", err)
+		}
 	}
 }

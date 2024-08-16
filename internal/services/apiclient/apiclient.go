@@ -123,7 +123,7 @@ func (c *APIClient) logRequest(req *http.Request) {
 	dump, err := httputil.DumpRequestOut(req, true)
 	dumpString := string(dump)
 	if err != nil {
-		logger.Debug.Println("Error dumping request:", err)
+		logger.LogDebug("Error dumping request:", err)
 	}
 
 	if len(dumpString) > 200 {
@@ -131,7 +131,7 @@ func (c *APIClient) logRequest(req *http.Request) {
 	}
 
 	if false {
-		logger.Debug.Println("API request:", dumpString)
+		logger.LogDebug("API request:", dumpString)
 	}
 }
 
@@ -141,13 +141,13 @@ func (c *APIClient) logResponse(resp *http.Response) {
 
 	bodyBytes, err := io.ReadAll(originalBody)
 	if err != nil {
-		logger.Debug.Println("Error reading response body:", err)
+		logger.LogDebug("Error reading response body:", err)
 		return
 	}
 
 	dump, err := httputil.DumpResponse(resp, false) // false because we handle the response body separately
 	if err != nil {
-		logger.Debug.Println("Error dumping response:", err)
+		logger.LogDebug("Error dumping response:", err)
 		return
 	}
 

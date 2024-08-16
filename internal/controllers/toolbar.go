@@ -21,7 +21,7 @@ func NewToolbar(r *router.Router) fyne.CanvasObject {
 		widget.NewToolbarAction(theme.DeleteIcon(), func() { fmt.Println("Cut") }),
 		widget.NewToolbarAction(theme.NewColoredResource(theme.AccountIcon(), accountTheme), func() { fmt.Println("Copy") }),
 		widget.NewToolbarAction(theme.SettingsIcon(), func() {
-			r.Navigate(router.AboutRoute)
+			r.Navigate(router.LoggerRoute)
 		}),
 	)
 }

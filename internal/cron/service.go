@@ -53,15 +53,15 @@ type CronService struct {
 }
 
 func (cs *CronService) StopAllJobs() {
-	logger.Info.Println("Stopping all CRON Jobs")
+	logger.LogInfo("Stopping all CRON Jobs")
 	for _, job := range cs.cronJobs {
-		logger.Info.Println("Stopping CRON: ", job.Id)
+		logger.LogInfo("Stopping CRON: ", job.Id)
 		job.Stop()
 	}
 }
 
 func (cs *CronService) AddJob(id, description string, interval time.Duration, run func()) *CronJob {
-	logger.Debug.Println("Starting job: ", id)
+	logger.LogDebug("Starting job: ", id)
 	nextRunBinding := binding.NewString()
 	job := &CronJob{
 		Id:          id,

@@ -43,10 +43,10 @@ func New() (*Application, error) {
 
 func (app *Application) logLifecycle() {
 	app.RootApp.Lifecycle().SetOnStarted(func() {
-		logger.Debug.Println("Lifecycle: Started")
+		logger.LogDebug("Lifecycle: Started")
 	})
 	app.RootApp.Lifecycle().SetOnStopped(func() {
-		logger.Debug.Println("Lifecycle: Stopped")
+		logger.LogDebug("Lifecycle: Stopped")
 		app.Context.CronService.StopAllJobs()
 	})
 	/*
@@ -79,6 +79,11 @@ func (app *Application) RegisterRoute() {
 		Title:   "CRON Jobs",
 		Content: "Created by login",
 	}, controllers.NewCronController(app.Router))
+
+	app.Router.RegisterRoute(router.LoggerRoute, router.RouteMetadata{
+		Title:   "Logger",
+		Content: "Created by login",
+	}, controllers.NewLoggerController(app.Router))
 }
 
 func (app *Application) Render() {
@@ -101,6 +106,7 @@ func (app *Application) Render() {
 func (app *Application) Start() error {
 	app.logLifecycle()
 	app.RegisterRoute()
+	controllers.MakeTray(app.RootApp)
 	app.Render()
 
 	return nil

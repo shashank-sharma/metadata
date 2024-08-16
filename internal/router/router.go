@@ -12,10 +12,11 @@ import (
 type Route string
 
 const (
-	HomeRoute  Route = "home"
-	AboutRoute Route = "about"
-	LoginRoute Route = "login"
-	CronRoute  Route = "cron"
+	HomeRoute   Route = "home"
+	AboutRoute  Route = "about"
+	LoginRoute  Route = "login"
+	CronRoute   Route = "cron"
+	LoggerRoute Route = "logger"
 )
 
 type RouteMetadata struct {
