@@ -12,8 +12,8 @@ import (
 	"github.com/shashank-sharma/metadata/internal/types"
 )
 
-func SyncAWEventJob(awService activitywatch.AWService, backendService backend.BackendService, c config.AppConfig, bucketId string) func() {
-	return func() {
+func SyncAWEventJob(awService activitywatch.AWService, backendService backend.BackendService, c config.AppConfig, bucketId string) func(cronInfo *CronInfo) {
+	return func(cronInfo *CronInfo) {
 		var err error
 		logger.LogDebug("Running Sync AWEvent Job")
 		userSettings := c.Settings.UserSettings
@@ -27,7 +27,9 @@ func SyncAWEventJob(awService activitywatch.AWService, backendService backend.Ba
 			logger.LogDebug("Timestamp default, fetching start timestamp")
 			startTimestamp, err = findStartTimestamp(awService, bucketId)
 			if err != nil {
-				logger.LogError("Failed finding start timestamp")
+				logger.LogError("Failed finding start timestamp: ", err)
+				currentFailedCount, _ := cronInfo.FailedCount.Get()
+				cronInfo.FailedCount.Set(currentFailedCount + 1)
 				return
 			}
 			// For testing assuming I started AW 1 hour ago
@@ -50,7 +52,9 @@ func SyncAWEventJob(awService activitywatch.AWService, backendService backend.Ba
 			events, err := awService.FetchEvents(bucketId, start, end)
 			sort.Sort(events)
 			if err != nil {
-				logger.LogWarning("Failed fetching events")
+				logger.LogWarning("Failed fetching events: ", err)
+				currentFailedCount, _ := cronInfo.FailedCount.Get()
+				cronInfo.FailedCount.Set(currentFailedCount + 1)
 				break
 			}
 
@@ -58,12 +62,16 @@ func SyncAWEventJob(awService activitywatch.AWService, backendService backend.Ba
 			// TODO: Need better error handling
 			if len(events) == 0 {
 				logger.LogError("Failed to find any events")
+				currentFailedCount, _ := cronInfo.FailedCount.Get()
+				cronInfo.FailedCount.Set(currentFailedCount + 1)
 				break
 			}
 
 			data, err := backendService.SyncEventData(userSettings.ProductId, bucketId, events)
 			if err != nil {
-				logger.LogError("Error syncing data with backend")
+				logger.LogError("Error syncing data with backend: ", err)
+				currentFailedCount, _ := cronInfo.FailedCount.Get()
+				cronInfo.FailedCount.Set(currentFailedCount + 1)
 				break
 			}
 			logger.LogDebug("Synced with response: ", data)
@@ -73,6 +81,8 @@ func SyncAWEventJob(awService activitywatch.AWService, backendService backend.Ba
 
 		userSettings.Bucket[bucketId] = tempBucket
 		c.SettingsManager.SaveSettings(userSettings)
+		currentSuccessCount, _ := cronInfo.SuccessCount.Get()
+		cronInfo.SuccessCount.Set(currentSuccessCount + 1)
 	}
 }
 

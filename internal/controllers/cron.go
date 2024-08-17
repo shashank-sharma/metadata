@@ -2,70 +2,54 @@ package controllers
 
 import (
 	"fmt"
-	"sync"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
 	"github.com/shashank-sharma/metadata/internal/router"
 )
 
-type CronTask struct {
-	Label    string
-	Progress *widget.ProgressBar
-}
-
 type CronController struct {
 	router *router.Router
-	tasks  []CronTask
-	mu     sync.Mutex
 }
 
 func NewCronController(router *router.Router) *CronController {
 	return &CronController{
 		router: router,
-		tasks:  make([]CronTask, 10),
 	}
 }
 
 func (c *CronController) Screen(meta router.RouteMetadata) fyne.CanvasObject {
 	title := widget.NewLabel(meta.Title)
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	vBox := container.NewVBox()
 	vBox.Add(title)
 
-	for i := 0; i < 10; i++ {
-		label := widget.NewLabel(fmt.Sprintf("Cron Job #%d", i+1))
-		progressBar := widget.NewProgressBar()
-		progressBar.Min = 0
-		progressBar.Max = 60
-		c.tasks[i] = CronTask{Label: fmt.Sprintf("Cron Job #%d", i+1), Progress: progressBar}
+	cronJobs := c.router.AppCtx.CronService.GetJobs()
+	if len(cronJobs) == 0 {
+		defaultLabel := widget.NewLabel("No Cron job found")
+		vBox.Add(defaultLabel)
+	} else {
+		for _, cronJob := range cronJobs {
+			label := widget.NewLabel(fmt.Sprintf("Cron Job: %s", cronJob.CronInfo.Id))
+			runningStatus := binding.BoolToStringWithFormat(cronJob.CronInfo.IsRunning, "Running: %s")
+			successCount := binding.IntToStringWithFormat(cronJob.CronInfo.SuccessCount, "Success: %s")
+			failedCount := binding.IntToStringWithFormat(cronJob.CronInfo.FailedCount, "Failures: %s")
 
-		vBox.Add(label)
-		vBox.Add(progressBar)
-	}
+			labelWithData := widget.NewLabelWithData(runningStatus)
+			labelNextRun := widget.NewLabelWithData(cronJob.CronInfo.NextRun)
+			labelSuccessCount := widget.NewLabelWithData(successCount)
+			labelFailedCount := widget.NewLabelWithData(failedCount)
 
-	go c.startTicking()
+			label.TextStyle = fyne.TextStyle{Bold: true}
 
-	return vBox
-}
-
-func (c *CronController) startTicking() {
-	ticker := time.NewTicker(time.Second)
-	for {
-		select {
-		case <-ticker.C:
-			c.mu.Lock()
-			for _, task := range c.tasks {
-				value := task.Progress.Value
-				if value--; value < 0 {
-					value = task.Progress.Max
-				}
-				task.Progress.SetValue(value)
-			}
-			c.mu.Unlock()
+			vBox.Add(label)
+			vBox.Add(labelWithData)
+			vBox.Add(labelNextRun)
+			vBox.Add(labelSuccessCount)
+			vBox.Add(labelFailedCount)
 		}
 	}
+
+	return vBox
 }

@@ -3,18 +3,27 @@ package controllers
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/driver/desktop"
-	"fyne.io/fyne/v2/theme"
+	"github.com/shashank-sharma/metadata/internal/logger"
+	"github.com/shashank-sharma/metadata/internal/router"
 )
 
-func MakeTray(a fyne.App) {
+func MakeTray(a fyne.App, w fyne.Window, r *router.Router) {
+	icon, err := fyne.LoadResourceFromPath("tray.png")
+	if err != nil {
+		logger.LogError("Could not load tray icon: ", err)
+	}
+
 	if desk, ok := a.(desktop.App); ok {
-		h := fyne.NewMenuItem("Hello", func() {})
-		h.Icon = theme.HomeIcon()
-		menu := fyne.NewMenu("Hello World", h)
-		h.Action = func() {
-			h.Label = "Welcome"
-			menu.Refresh()
-		}
-		desk.SetSystemTrayMenu(menu)
+		desk.SetSystemTrayIcon(icon)
+
+		m := fyne.NewMenu("MyApp",
+			fyne.NewMenuItem("Show", func() {
+				w.Show()
+			}))
+		desk.SetSystemTrayMenu(m)
+		w.SetCloseIntercept(func() {
+			logger.LogDebug("Closed intercept")
+			w.Hide()
+		})
 	}
 }

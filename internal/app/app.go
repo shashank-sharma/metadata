@@ -106,7 +106,7 @@ func (app *Application) Render() {
 func (app *Application) Start() error {
 	app.logLifecycle()
 	app.RegisterRoute()
-	controllers.MakeTray(app.RootApp)
+	controllers.MakeTray(app.RootApp, app.RootWindow, app.Router)
 	app.Render()
 
 	return nil
