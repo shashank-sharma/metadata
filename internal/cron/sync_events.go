@@ -55,7 +55,7 @@ func SyncAWEventJob(awService activitywatch.AWService, backendService backend.Ba
 				logger.LogWarning("Failed fetching events: ", err)
 				currentFailedCount, _ := cronInfo.FailedCount.Get()
 				cronInfo.FailedCount.Set(currentFailedCount + 1)
-				break
+				return
 			}
 
 			// TODO: Sync only if events are greater than 0
@@ -64,7 +64,7 @@ func SyncAWEventJob(awService activitywatch.AWService, backendService backend.Ba
 				logger.LogError("Failed to find any events")
 				currentFailedCount, _ := cronInfo.FailedCount.Get()
 				cronInfo.FailedCount.Set(currentFailedCount + 1)
-				break
+				return
 			}
 
 			data, err := backendService.SyncEventData(userSettings.ProductId, bucketId, events)
@@ -72,7 +72,7 @@ func SyncAWEventJob(awService activitywatch.AWService, backendService backend.Ba
 				logger.LogError("Error syncing data with backend: ", err)
 				currentFailedCount, _ := cronInfo.FailedCount.Get()
 				cronInfo.FailedCount.Set(currentFailedCount + 1)
-				break
+				return
 			}
 			logger.LogDebug("Synced with response: ", data)
 			tempBucket.LastSynced = end

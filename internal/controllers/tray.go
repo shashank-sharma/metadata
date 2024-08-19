@@ -8,14 +8,7 @@ import (
 )
 
 func MakeTray(a fyne.App, w fyne.Window, r *router.Router) {
-	icon, err := fyne.LoadResourceFromPath("tray.png")
-	if err != nil {
-		logger.LogError("Could not load tray icon: ", err)
-	}
-
 	if desk, ok := a.(desktop.App); ok {
-		desk.SetSystemTrayIcon(icon)
-
 		m := fyne.NewMenu("MyApp",
 			fyne.NewMenuItem("Show", func() {
 				w.Show()
