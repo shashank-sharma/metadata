@@ -11,7 +11,7 @@ type BackendService struct {
 }
 
 func NewBackendService(baseUrl string) *BackendService {
-	apiClient := apiclient.New(baseUrl, 60*time.Second)
+	apiClient := apiclient.New(baseUrl, 300*time.Second)
 	return &BackendService{
 		Client: apiClient,
 	}

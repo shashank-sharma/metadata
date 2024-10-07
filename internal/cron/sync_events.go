@@ -15,7 +15,7 @@ import (
 func SyncAWEventJob(awService activitywatch.AWService, backendService backend.BackendService, c config.AppConfig, bucketId string) func(cronInfo *CronInfo) {
 	return func(cronInfo *CronInfo) {
 		var err error
-		logger.LogDebug("Running Sync AWEvent Job")
+		logger.LogDebug("Running Sync AWEvent Job new")
 		userSettings := c.Settings.UserSettings
 		tempBucket := userSettings.Bucket[bucketId]
 		syncTime := time.Now().UTC()
@@ -44,8 +44,8 @@ func SyncAWEventJob(awService activitywatch.AWService, backendService backend.Ba
 		logger.LogDebug("LastSynced timestamp is: ", tempBucket.LastSynced)
 
 		// Step 2: Fetch and sync events in 1-day intervals up to the current time
-		for start := startTimestamp; start.Before(syncTime); start = start.AddDate(0, 0, 1) {
-			end := start.AddDate(0, 0, 1)
+		for start := startTimestamp; start.Before(syncTime); start = start.Add(4 * time.Hour) {
+			end := start.Add(4 * time.Hour)
 			if end.After(syncTime) {
 				end = syncTime
 			}
@@ -58,31 +58,33 @@ func SyncAWEventJob(awService activitywatch.AWService, backendService backend.Ba
 				return
 			}
 
+			// If ActivityWatch closes all of sudden then for
+			// given timestamp, it is possible events count is 0
+			// hence it is not a failure and recovery is required
 			// TODO: Sync only if events are greater than 0
 			// TODO: Need better error handling
 			if len(events) == 0 {
-				logger.LogError("Failed to find any events")
-				currentFailedCount, _ := cronInfo.FailedCount.Get()
-				cronInfo.FailedCount.Set(currentFailedCount + 1)
-				return
+				logger.LogInfo("Failed to find any events")
+				tempBucket.EndTimestamp = end
+			} else {
+				logger.LogWarning("Found events: ", len(events))
+				data, err := backendService.SyncEventData(userSettings.ProductId, bucketId, events)
+				if err != nil {
+					logger.LogError("Error syncing data with backend: ", err)
+					currentFailedCount, _ := cronInfo.FailedCount.Get()
+					cronInfo.FailedCount.Set(currentFailedCount + 1)
+					return
+				}
+				logger.LogDebug("Synced with response: ", data)
+				tempBucket.EndTimestamp = events[0].Timestamp
 			}
 
-			data, err := backendService.SyncEventData(userSettings.ProductId, bucketId, events)
-			if err != nil {
-				logger.LogError("Error syncing data with backend: ", err)
-				currentFailedCount, _ := cronInfo.FailedCount.Get()
-				cronInfo.FailedCount.Set(currentFailedCount + 1)
-				return
-			}
-			logger.LogDebug("Synced with response: ", data)
 			tempBucket.LastSynced = end
-			tempBucket.EndTimestamp = events[0].Timestamp
+			userSettings.Bucket[bucketId] = tempBucket
+			c.SettingsManager.SaveSettings(userSettings)
+			currentSuccessCount, _ := cronInfo.SuccessCount.Get()
+			cronInfo.SuccessCount.Set(currentSuccessCount + 1)
 		}
-
-		userSettings.Bucket[bucketId] = tempBucket
-		c.SettingsManager.SaveSettings(userSettings)
-		currentSuccessCount, _ := cronInfo.SuccessCount.Get()
-		cronInfo.SuccessCount.Set(currentSuccessCount + 1)
 	}
 }
 
