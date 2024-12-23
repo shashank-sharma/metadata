@@ -130,6 +130,7 @@ func (c *APIClient) logRequest(req *http.Request) {
 		dumpString = dumpString[:200] + "..."
 	}
 
+	// TODO: Should log based off testing vs prod environment
 	if false {
 		logger.LogDebug("API request:", dumpString)
 	}

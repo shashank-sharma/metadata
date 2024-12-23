@@ -21,9 +21,9 @@ type Application struct {
 	Router     *router.Router
 }
 
-func New() (*Application, error) {
+func New(appId string) (*Application, error) {
 	application := &Application{}
-	application.RootApp = app.NewWithID("dashboard-metadata")
+	application.RootApp = app.NewWithID(appId)
 	application.RootWindow = application.RootApp.NewWindow("Metadata Manager")
 	appConfig, err := config.LoadConfig(application.RootApp.Storage().RootURI())
 
@@ -84,6 +84,11 @@ func (app *Application) RegisterRoute() {
 		Title:   "Logger",
 		Content: "Created by login",
 	}, controllers.NewLoggerController(app.Router))
+
+	app.Router.RegisterRoute(router.FocusRoute, router.RouteMetadata{
+		Title:   "Focus time",
+		Content: "Created by login",
+	}, controllers.NewFocusController(app.Router))
 }
 
 func (app *Application) Render() {

@@ -17,6 +17,7 @@ const (
 	LoginRoute  Route = "login"
 	CronRoute   Route = "cron"
 	LoggerRoute Route = "logger"
+	FocusRoute  Route = "focus"
 )
 
 type RouteMetadata struct {

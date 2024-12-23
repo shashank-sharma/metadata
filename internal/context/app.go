@@ -49,6 +49,9 @@ func (ac *AppContext) OnLoginSuccess() {
 }
 
 func (ac *AppContext) StartCronJob() {
+	// TODO: There can be a case, if cron is started, then stopped by removing it
+	// But CronService still have job in memory, as we did AddJob, there has to
+	// be a removeJob as well, if it already exist but not enabled
 	ac.CronService.StopAllJobs()
 	userSettings := ac.Config.Settings.UserSettings
 	for bucketName, bucketConfig := range userSettings.Bucket {

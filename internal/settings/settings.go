@@ -17,11 +17,19 @@ type BucketConfig struct {
 	LastSynced     time.Time
 }
 
+type FocusConfig struct {
+	Tags      []string  `json:"tags"`
+	Metadata  string    `json:"metadata"`
+	CreatedAt time.Time `json:"created_at"`
+	StoppedAt time.Time `json:"stopped_at"`
+}
+
 type UserSettings struct {
-	UserId    string                  `json:"userid"`
-	Token     string                  `json:"token"`
-	ProductId string                  `json:"productid"`
-	Bucket    map[string]BucketConfig `json:"bucket"`
+	UserId       string                  `json:"userid"`
+	Token        string                  `json:"token"`
+	ProductId    string                  `json:"productid"`
+	Bucket       map[string]BucketConfig `json:"bucket"`
+	CurrentFocus *FocusConfig            `json:"current_focus,omitempty"`
 }
 
 func (us *UserSettings) FileName() string {

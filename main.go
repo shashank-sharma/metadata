@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	application, err := app.New()
+	application, err := app.New("dashboard-metadata")
 	if err != nil {
 		fmt.Println("Failed to start Application: ", err)
 		return
